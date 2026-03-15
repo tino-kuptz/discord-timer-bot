@@ -1,5 +1,6 @@
 import discord from 'discord.js';
-const { SlashCommandBuilder, MessageFlags } = discord;
+const { SlashCommandBuilder, MessageFlags, PermissionsBitField } = discord;
+const { Connect, Speak } = PermissionsBitField.Flags;
 import * as ConfigStore from './ConfigStore.js';
 import * as SoundboardService from './SoundboardService.js';
 import * as TimerManager from './TimerManager.js';
@@ -77,6 +78,16 @@ export async function handleInteraction(interaction) {
         logger.debug({ userId, guildId }, 'Timer abgelehnt: User nicht im Voice-Channel');
         await interaction.reply({
           content: 'Bitte zuerst einem Voice-Channel beitreten.',
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+      const me = interaction.guild.members.me ?? await interaction.guild.members.fetchMe();
+      const perms = voiceChannel.permissionsFor(me);
+      if (!perms?.has(Connect) || !perms.has(Speak)) {
+        logger.info({ guildId, channelId: voiceChannel.id }, 'Timer abgelehnt: Bot darf Channel nicht betreten oder sprechen');
+        await interaction.reply({
+          content: 'Ich darf diesem Voice-Channel nicht beitreten oder dort sprechen. Bitte Berechtigungen prüfen (Verbinden + Sprechen).',
           flags: MessageFlags.Ephemeral,
         });
         return;
