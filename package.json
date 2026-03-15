@@ -1,0 +1,17 @@
+{
+  "name": "discord-timer-bot",
+  "version": "1.0.0",
+  "description": "A bot allowing to set timers in Discord",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.19.1",
+    "@noble/ciphers": "^2.1.1",
+    "discord.js": "^14.25.1",
+    "dotenv": "^16.4.5",
+    "pino": "^10.3.1"
+  }
+}
