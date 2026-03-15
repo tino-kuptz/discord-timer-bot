@@ -3,6 +3,7 @@ name: Build and push Docker image
 on:
   push:
     branches: [main, master]
+    tags: ['v*']
   workflow_dispatch:
 
 env:
@@ -36,6 +37,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
+            type=ref,event=tag
             type=sha,prefix=
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
 
