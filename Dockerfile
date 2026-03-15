@@ -15,12 +15,12 @@ COPY src ./src
 
 # Datenverzeichnis (wird zur Laufzeit gemountet oder über DATA_PATH genutzt)
 ENV NODE_ENV=production
-ENV DATA_PATH=/app/data
+ENV DATA_PATH=/data
 
 # Optional: Datenordner anlegen (wenn kein Volume gemountet wird)
-RUN mkdir -p /app/data /app/data/sounds
+RUN mkdir -p /data /data/sounds
 
 USER node
-EXPOSE 3000
+#EXPOSE 3000
 
 CMD ["node", "src/index.js"]
