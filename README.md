@@ -5,6 +5,36 @@ Quick and dirty.
 
 Link, um den auf den eigenen Server zu bekommen: [Anfrage](https://discord.com/oauth2/authorize?client_id=1482755309054464170&permissions=4400197142528&integration_type=0&scope=bot+applications.commands)
 
+## Docker
+
+```bash
+docker run -d --name discord-timer-bot \
+  -e DISCORD_TOKEN=dein_bot_token \
+  -v discord-timer-bot-data:/data \
+  ghcr.io/tino-kuptz/discord-timer-bot:latest
+```
+
+Mit Docker Compose: `.env` mit `DISCORD_TOKEN` anlegen, dann:
+
+```bash
+services:
+  discord-timer-bot:
+    image: ghcr.io/tino-kuptz/discord-timer-bot:latest
+    container_name: discord-timer-bot
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=XXXXX
+      - DATA_PATH=/data
+      - DEBUG_LEVEL=info
+    volumes:
+      - bot-data:/data
+
+volumes:
+  bot-data:
+```
+
+Daten (Config + gecachte Sounds) liegen im Volume `bot-data` bzw. unter dem gemounteten Pfad.
+
 ## Discord-Bot aufsetzen
 
 1. **Bot im Discord Developer Portal anlegen**
