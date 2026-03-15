@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { logger } from './logger.js';
 
-const IDLE_MS = 30 * 60 * 1000; // 30 minutes
+const IDLE_MS = 20 * 60 * 1000; // 30 minutes
 const EXPIRED_IGNORE_MS = 2 * 60 * 1000; // Timer > 2 min abgelaufen → ignorieren
 
 const DATA_PATH = process.env.DATA_PATH || './data';

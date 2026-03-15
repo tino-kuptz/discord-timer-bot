@@ -15,7 +15,7 @@ Weiter unten genauer, Kurzfassung:
 
 Alle aktiven Timer kann man mit `/timer` sehen.  
 Der Bot tritt sofort dem eigenem Channel bei und spielt nach x Minuten den Sound ab.  
-Nach über einer halben Stunde ohne neuen Timer trennt der Bot automatisch die Verbindung zum Voice.
+Nach 20 Minuten ohne neuen Timer trennt der Bot automatisch die Verbindung zum Voice.
 
 **Der Bot funktioniert nur auf Servern("guilds")**
 
