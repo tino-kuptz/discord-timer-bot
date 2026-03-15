@@ -43,6 +43,11 @@ export async function start(token) {
         logger.error({ err: e }, 'Registrierung der Slash-Commands fehlgeschlagen');
       }
     }
+    try {
+      await TimerManager.restoreTimers(client);
+    } catch (e) {
+      logger.error({ err: e }, 'Wiederherstellung der Timer fehlgeschlagen');
+    }
   });
 
   client.on('interactionCreate', (interaction) => {
