@@ -110,8 +110,7 @@ export async function handleInteraction(interaction) {
     } else {
       const lines = activeTimers.map((t) => {
         const minLabel = t.minutes === 1 ? 'Minute' : 'Minuten';
-        const remLabel = t.remaining === 1 ? 'Minute' : 'Minuten';
-        return `${t.minutes} ${minLabel} Timer von <@${t.userId}>: **${t.remaining}** ${remLabel} verbleibend`;
+        return `${t.minutes} ${minLabel} Timer von <@${t.userId}>: <t:${t.endTimeUnix}:R>`;
       });
       await interaction.reply({
         content: lines.join('\n'),
