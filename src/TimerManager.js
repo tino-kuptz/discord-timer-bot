@@ -249,7 +249,7 @@ export function getRemainingMinutes(userId, guildId) {
 /**
  * Get all active timers on a guild.
  * @param {string} guildId
- * @returns {Array<{ userId: string, minutes: number, remaining: number }>}
+ * @returns {Array<{ userId: string, minutes: number, endTimeUnix: number }>}
  */
 export function getAllActiveTimers(guildId) {
   const guildTimers = timers.get(guildId);
@@ -263,7 +263,7 @@ export function getAllActiveTimers(guildId) {
     result.push({
       userId: uid,
       minutes: entry.minutesClamped ?? 0,
-      remaining: Math.ceil(remaining / 60000),
+      endTimeUnix: Math.floor(entry.endTime / 1000),
     });
   }
   return result;
