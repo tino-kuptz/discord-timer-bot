@@ -2,7 +2,6 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { logger } from './logger.js';
 
-const IDLE_MS = 20 * 60 * 1000; // 30 minutes
 const EXPIRED_IGNORE_MS = 2 * 60 * 1000; // Timer > 2 min abgelaufen → ignorieren
 
 const DATA_PATH = process.env.DATA_PATH || './data';
@@ -10,8 +9,6 @@ const TIMERS_FILE = join(DATA_PATH, 'timers.json');
 
 // guildId -> Map<userId, { channel, timeoutId, endTime, minutesClamped, textChannelId }>
 const timers = new Map();
-// guildId -> NodeJS.Timeout (idle leave)
-const guildIdleTimeouts = new Map();
 
 let voiceHandlerRef = null;
 let configStoreRef = null;
@@ -54,7 +51,7 @@ function loadTimersFromFile() {
 }
 
 /**
- * Send message, play sound, schedule idle leave (shared by timeout and restore).
+ * Send message and play sound (shared by timeout and restore).
  * @param {string} userId
  * @param {string} guildId
  * @param {number} minutesClamped
@@ -81,20 +78,6 @@ async function fireTimerCallback(userId, guildId, minutesClamped, replyChannel) 
       await replyChannel.send('Sound konnte nicht abgespielt werden.').catch(() => {});
     }
   }
-  scheduleIdleLeave(guildId);
-}
-
-function scheduleIdleLeave(guildId) {
-  const prev = guildIdleTimeouts.get(guildId);
-  if (prev) clearTimeout(prev);
-  guildIdleTimeouts.delete(guildId);
-  logger.debug({ guildId }, 'Idle-Timer gestartet (1h bis Auto-Leave)');
-  const timeoutId = setTimeout(() => {
-    voiceHandlerRef.leaveChannel(guildId);
-    guildIdleTimeouts.delete(guildId);
-    logger.info({ guildId }, 'Voice-Channel nach Idle verlassen');
-  }, IDLE_MS);
-  guildIdleTimeouts.set(guildId, timeoutId);
 }
 
 /**
@@ -282,5 +265,64 @@ export function cancelTimer(userId, guildId) {
     if (guildTimers.size === 0) timers.delete(guildId);
     logger.debug({ userId, guildId }, 'Timer abgebrochen');
     saveTimersToFile();
+  }
+}
+
+function getTimerEntry(userId, guildId) {
+  const guildTimers = timers.get(guildId);
+  if (!guildTimers) return null;
+  return guildTimers.get(userId) ?? null;
+}
+
+function hasActiveTimer(userId, guildId) {
+  const entry = getTimerEntry(userId, guildId);
+  if (!entry?.endTime) return false;
+  return entry.endTime > Date.now();
+}
+
+function updateTimerChannel(userId, guildId, channel) {
+  const entry = getTimerEntry(userId, guildId);
+  if (!entry) return;
+  entry.channel = channel;
+  saveTimersToFile();
+}
+
+function countHumanMembers(channel) {
+  return channel.members.filter((member) => !member.user?.bot).size;
+}
+
+/**
+ * React to voice channel join/leave/move events.
+ * - Wenn User mit aktivem Timer joint/moved: Bot joint denselben Channel.
+ * - Wenn im Bot-Channel keine menschlichen User mehr sind: Bot leavet.
+ * @param {import('discord.js').VoiceState} oldState
+ * @param {import('discord.js').VoiceState} newState
+ */
+export async function handleVoiceStateUpdate(oldState, newState) {
+  const guild = newState.guild ?? oldState.guild;
+  const guildId = guild?.id;
+  if (!guildId) return;
+
+  const membershipChanged = oldState.channelId !== newState.channelId;
+  if (!membershipChanged) return;
+
+  const member = newState.member ?? oldState.member;
+  if (member && !member.user?.bot && newState.channel && hasActiveTimer(member.id, guildId)) {
+    voiceHandlerRef.joinChannel(newState.channel);
+    updateTimerChannel(member.id, guildId, newState.channel);
+    logger.debug({ guildId, userId: member.id, channelId: newState.channel.id }, 'User mit aktivem Timer gejoint/moved → Bot folgt');
+  }
+
+  const botChannelId = voiceHandlerRef.getConnectedChannelId(guildId);
+  if (!botChannelId) return;
+
+  const botChannel = await guild.channels.fetch(botChannelId).catch(() => null);
+  const isVoice =
+    botChannel && (typeof botChannel.isVoiceBased === 'function' ? botChannel.isVoiceBased() : [2, 13].includes(botChannel.type));
+  if (!isVoice) return;
+
+  if (countHumanMembers(botChannel) === 0) {
+    voiceHandlerRef.leaveChannel(guildId);
+    logger.info({ guildId, channelId: botChannelId }, 'Keine User mehr im Voice-Channel → Bot leavet');
   }
 }
