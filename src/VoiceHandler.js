@@ -21,8 +21,14 @@ export function joinChannel(channel) {
   const channelId = channel.id;
   const existing = getVoiceConnection(channel.guild.id);
   if (existing) {
-    logger.debug({ guildId, channelId }, 'Bereits im Voice-Channel');
-    return existing;
+    const currentChannelId = existing.joinConfig?.channelId;
+    if (currentChannelId === channelId) {
+      logger.debug({ guildId, channelId }, 'Bereits im Voice-Channel');
+      return existing;
+    }
+    logger.info({ guildId, fromChannelId: currentChannelId, toChannelId: channelId }, 'Voice-Channel wechseln');
+    existing.destroy();
+    connections.delete(guildId);
   }
   logger.info({ guildId, channelId }, 'Voice-Channel beitreten');
   const connection = joinVoiceChannel({
@@ -36,6 +42,16 @@ export function joinChannel(channel) {
   connection.subscribe(player);
   connections.set(guildId, { connection, player });
   return connection;
+}
+
+/**
+ * Get current connected voice channel id for a guild.
+ * @param {string} guildId
+ * @returns {string|null}
+ */
+export function getConnectedChannelId(guildId) {
+  const connection = getVoiceConnection(guildId);
+  return connection?.joinConfig?.channelId ?? null;
 }
 
 /**

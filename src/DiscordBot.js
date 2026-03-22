@@ -61,6 +61,12 @@ export async function start(token) {
     });
   });
 
+  client.on('voiceStateUpdate', (oldState, newState) => {
+    TimerManager.handleVoiceStateUpdate(oldState, newState).catch((err) => {
+      logger.warn({ err, guildId: newState?.guild?.id ?? oldState?.guild?.id }, 'voiceStateUpdate-Verarbeitung fehlgeschlagen');
+    });
+  });
+
   logger.debug('Starte Login');
   await client.login(token);
 }
